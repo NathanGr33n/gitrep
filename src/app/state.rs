@@ -3,7 +3,8 @@
 //! Manages the state of the TUI application including selected items,
 //! current view, and navigation history.
 
-use crate::git::{CommitInfo, Repository};
+use crate::git::{CommitInfo, Repository, StagingArea};
+use crate::ui::widgets::StagingState;
 use anyhow::Result;
 
 /// The currently active pane in the UI
@@ -24,6 +25,8 @@ pub enum ViewMode {
     Detail,
     Search,
     Help,
+    Staging,
+    Commit,
 }
 
 /// Application state
@@ -49,6 +52,8 @@ pub struct AppState {
     pub current_branch: String,
     /// Total commit count (for display)
     pub total_commits: usize,
+    /// Staging area state
+    pub staging: StagingState,
 }
 
 impl AppState {
@@ -70,7 +75,30 @@ impl AppState {
             repo_name,
             current_branch,
             total_commits,
+            staging: StagingState::new(),
         })
+    }
+
+    /// Refresh staging area status
+    pub fn refresh_staging(&mut self, repo: &Repository) -> Result<()> {
+        let staging_area = StagingArea::new(repo.inner());
+        let staged = staging_area.get_staged()?;
+        let unstaged = staging_area.get_unstaged()?;
+        self.staging.update_files(staged, unstaged);
+        Ok(())
+    }
+
+    /// Enter staging view
+    pub fn enter_staging(&mut self) {
+        self.view_mode = ViewMode::Staging;
+    }
+
+    /// Enter commit mode
+    pub fn enter_commit_mode(&mut self) {
+        if self.staging.has_staged_changes() {
+            self.view_mode = ViewMode::Commit;
+            self.staging.enter_commit_mode();
+        }
     }
 
     /// Select the next item in the current list
@@ -170,8 +198,12 @@ impl AppState {
     /// Go back from current view
     pub fn go_back(&mut self) {
         match self.view_mode {
-            ViewMode::Detail | ViewMode::Search | ViewMode::Help => {
+            ViewMode::Detail | ViewMode::Search | ViewMode::Help | ViewMode::Staging => {
                 self.view_mode = ViewMode::Normal;
+            }
+            ViewMode::Commit => {
+                self.staging.exit_commit_mode();
+                self.view_mode = ViewMode::Staging;
             }
             ViewMode::Normal => {}
         }
