@@ -1,0 +1,48 @@
+[package]
+name = "gitrep"
+version = "0.1.0"
+edition = "2021"
+description = "A high-performance TUI for exploring and analyzing Git repositories"
+authors = ["GitRep Contributors"]
+license = "MIT"
+repository = "https://github.com/example/gitrep"
+keywords = ["git", "tui", "terminal", "repository", "inspector"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "gitrep"
+path = "src/main.rs"
+
+[dependencies]
+# Git backend
+git2 = "0.18"
+
+# TUI framework
+ratatui = "0.26"
+crossterm = "0.27"
+
+# Async runtime
+tokio = { version = "1.36", features = ["full"] }
+
+# Configuration
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+anyhow = "1.0"
+thiserror = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+unicode-width = "0.1"
+
+[dev-dependencies]
+insta = "1.34"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
