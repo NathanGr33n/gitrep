@@ -88,6 +88,12 @@ impl Tui {
                     render_normal_view(frame, chunks[1], state, repo, theme);
                     // TODO: Add search overlay
                 }
+                ViewMode::Staging => {
+                    widgets::render_staging(frame, chunks[1], &state.staging, theme);
+                }
+                ViewMode::Commit => {
+                    widgets::render_commit_input(frame, chunks[1], &state.staging.commit_message, theme);
+                }
             }
 
             // Render status bar

@@ -25,8 +25,16 @@ pub fn render_help(frame: &mut Frame, area: Rect, theme: &Theme) {
             ("Enter", "Toggle detail view"),
             ("Tab", "Next pane"),
             ("Shift+Tab", "Previous pane"),
+            ("s", "Open staging area"),
             ("/", "Search"),
             ("?", "Toggle help"),
+        ]),
+        ("Staging", vec![
+            ("Space / Enter", "Stage/unstage file"),
+            ("a", "Stage all changes"),
+            ("u", "Unstage all changes"),
+            ("c", "Create commit"),
+            ("r", "Refresh status"),
         ]),
         ("General", vec![
             ("q", "Quit"),
