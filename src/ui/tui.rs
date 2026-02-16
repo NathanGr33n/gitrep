@@ -94,6 +94,9 @@ impl Tui {
                 ViewMode::Commit => {
                     widgets::render_commit_input(frame, chunks[1], &state.staging.commit_message, theme);
                 }
+                ViewMode::Branches => {
+                    widgets::render_branch_browser(frame, chunks[1], &state.branch_browser, theme);
+                }
             }
 
             // Render status bar

@@ -20,15 +20,17 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, state: &AppState, theme:
         ViewMode::Help => "HELP",
         ViewMode::Staging => "STAGING",
         ViewMode::Commit => "COMMIT",
+        ViewMode::Branches => "BRANCHES",
     };
 
     let help_text = match state.view_mode {
-        ViewMode::Normal => "j/k:nav  Enter:detail  s:staging  ?:help  q:quit",
+        ViewMode::Normal => "j/k:nav  Enter:detail  s:staging  b:branches  ?:help  q:quit",
         ViewMode::Detail => "j/k:nav  Esc:back  ?:help  q:quit",
         ViewMode::Search => "Enter:search  Esc:cancel",
         ViewMode::Help => "Esc:back  q:quit",
         ViewMode::Staging => "j/k:nav  Space:stage  a:all  c:commit  Esc:back",
         ViewMode::Commit => "Enter:commit  Esc:cancel",
+        ViewMode::Branches => "j/k:nav  Tab:switch  Enter:checkout  n:new  d:delete  Esc:back",
     };
 
     let position = format!(

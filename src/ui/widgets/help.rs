@@ -26,6 +26,7 @@ pub fn render_help(frame: &mut Frame, area: Rect, theme: &Theme) {
             ("Tab", "Next pane"),
             ("Shift+Tab", "Previous pane"),
             ("s", "Open staging area"),
+            ("b", "Open branch browser"),
             ("/", "Search"),
             ("?", "Toggle help"),
         ]),
@@ -35,6 +36,13 @@ pub fn render_help(frame: &mut Frame, area: Rect, theme: &Theme) {
             ("u", "Unstage all changes"),
             ("c", "Create commit"),
             ("r", "Refresh status"),
+        ]),
+        ("Branches", vec![
+            ("Tab", "Switch branches/tags"),
+            ("Enter", "Checkout branch"),
+            ("n", "Create new branch/tag"),
+            ("d", "Delete branch/tag"),
+            ("r", "Refresh list"),
         ]),
         ("General", vec![
             ("q", "Quit"),
