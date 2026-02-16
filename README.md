@@ -13,15 +13,21 @@ A high-performance terminal user interface (TUI) for exploring and analyzing Git
 - [x] Vim-style keyboard navigation
 - [x] Help overlay
 
-### Phase 2 (Current) - Diff & Staging
+### Phase 2 - Diff & Staging
 - [x] Staging area view with staged/unstaged sections
 - [x] Stage/unstage individual files
 - [x] Stage/unstage all changes
 - [x] Commit creation with message input
 - [x] Working tree status display
 
+### Phase 3 (Current) - Branches & Tags
+- [x] Branch browser with ahead/behind indicators
+- [x] Tag browser with annotated/lightweight indicators
+- [x] Create/delete branches
+- [x] Create/delete tags
+- [x] Checkout branches
+
 ### Planned Features
-- **Phase 3**: Branch/tag browser, checkout operations
 - **Phase 4**: Repository analytics (commit heatmap, contributor stats)
 - **Phase 5**: Configuration system, themes, performance tuning
 
@@ -80,6 +86,15 @@ gitrep /path/to/repository
 | `u` | Unstage all changes |
 | `c` | Create commit |
 | `r` | Refresh status |
+
+### Branches Mode
+| Key | Action |
+|-----|--------|
+| `Tab` | Switch branches/tags view |
+| `Enter` | Checkout branch |
+| `n` | Create new branch/tag |
+| `d` | Delete branch/tag |
+| `r` | Refresh list |
 
 ### General
 | Key | Action |
