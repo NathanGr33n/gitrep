@@ -1,4 +1,22 @@
-#dev docs
+# Dev docs
 prd.md
 ts.md
+
+# Build artifacts
+/target
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+*.pdb
+*.log
 
