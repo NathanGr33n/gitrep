@@ -3,8 +3,8 @@
 //! Manages the state of the TUI application including selected items,
 //! current view, and navigation history.
 
-use crate::git::{CommitInfo, Repository, StagingArea};
-use crate::ui::widgets::StagingState;
+use crate::git::{BranchManager, CommitInfo, Repository, StagingArea};
+use crate::ui::widgets::{BranchBrowserState, StagingState};
 use anyhow::Result;
 
 /// The currently active pane in the UI
@@ -27,6 +27,7 @@ pub enum ViewMode {
     Help,
     Staging,
     Commit,
+    Branches,
 }
 
 /// Application state
@@ -54,6 +55,8 @@ pub struct AppState {
     pub total_commits: usize,
     /// Staging area state
     pub staging: StagingState,
+    /// Branch browser state
+    pub branch_browser: BranchBrowserState,
 }
 
 impl AppState {
@@ -76,7 +79,25 @@ impl AppState {
             current_branch,
             total_commits,
             staging: StagingState::new(),
+            branch_browser: BranchBrowserState::new(),
         })
+    }
+
+    /// Refresh branch list
+    pub fn refresh_branches(&mut self, repo: &Repository) -> Result<()> {
+        let branch_mgr = BranchManager::new(repo.inner());
+        let branches = branch_mgr.get_branches()?;
+        let tags = branch_mgr.get_tags()?;
+        self.branch_browser.update_branches(branches);
+        self.branch_browser.update_tags(tags);
+        // Also update current branch
+        self.current_branch = repo.current_branch().unwrap_or_else(|| "HEAD".to_string());
+        Ok(())
+    }
+
+    /// Enter branches view
+    pub fn enter_branches(&mut self) {
+        self.view_mode = ViewMode::Branches;
     }
 
     /// Refresh staging area status
@@ -204,6 +225,13 @@ impl AppState {
             ViewMode::Commit => {
                 self.staging.exit_commit_mode();
                 self.view_mode = ViewMode::Staging;
+            }
+            ViewMode::Branches => {
+                if self.branch_browser.input_mode {
+                    self.branch_browser.cancel_input();
+                } else {
+                    self.view_mode = ViewMode::Normal;
+                }
             }
             ViewMode::Normal => {}
         }

@@ -9,8 +9,9 @@ mod state;
 pub use config::Config;
 pub use state::AppState;
 
-use crate::git::{Repository, StagingArea};
+use crate::git::{BranchManager, Repository, StagingArea};
 use crate::ui::{Event, Tui};
+use crate::ui::widgets::{BranchOperation, BranchViewTab};
 use crate::app::state::ViewMode;
 use anyhow::{Context, Result};
 use crossterm::event::{self, Event as CrosstermEvent, KeyCode, KeyModifiers};
@@ -102,6 +103,11 @@ impl App {
             return self.handle_staging_input(key);
         }
 
+        // Handle branches view separately
+        if self.state.view_mode == ViewMode::Branches {
+            return self.handle_branches_input(key);
+        }
+
         // Global keybindings
         match (key.modifiers, key.code) {
             // Quit application
@@ -165,6 +171,12 @@ impl App {
             (KeyModifiers::NONE, KeyCode::Char('s')) => {
                 self.state.refresh_staging(&self.repo)?;
                 self.state.enter_staging();
+            }
+
+            // Branches view
+            (KeyModifiers::NONE, KeyCode::Char('b')) => {
+                self.state.refresh_branches(&self.repo)?;
+                self.state.enter_branches();
             }
 
             _ => {}
@@ -298,6 +310,196 @@ impl App {
                 warn!("Failed to create commit: {}", e);
             }
         }
+
+        Ok(())
+    }
+
+    /// Handle branches view input
+    fn handle_branches_input(&mut self, key: event::KeyEvent) -> Result<()> {
+        // Handle input mode for creating branch/tag
+        if self.state.branch_browser.input_mode {
+            return self.handle_branch_name_input(key);
+        }
+
+        match (key.modifiers, key.code) {
+            // Quit
+            (KeyModifiers::CONTROL, KeyCode::Char('c')) | (KeyModifiers::NONE, KeyCode::Char('q')) => {
+                self.should_quit = true;
+            }
+
+            // Navigation
+            (KeyModifiers::NONE, KeyCode::Char('j')) | (KeyModifiers::NONE, KeyCode::Down) => {
+                self.state.branch_browser.select_next();
+            }
+            (KeyModifiers::NONE, KeyCode::Char('k')) | (KeyModifiers::NONE, KeyCode::Up) => {
+                self.state.branch_browser.select_previous();
+            }
+
+            // Switch tabs
+            (KeyModifiers::NONE, KeyCode::Tab) => {
+                self.state.branch_browser.next_tab();
+            }
+
+            // Checkout branch
+            (KeyModifiers::NONE, KeyCode::Enter) => {
+                self.checkout_selected_branch()?;
+            }
+
+            // Create branch
+            (KeyModifiers::NONE, KeyCode::Char('n')) => {
+                if self.state.branch_browser.tab == BranchViewTab::Branches {
+                    self.state.branch_browser.start_create_branch();
+                } else {
+                    self.state.branch_browser.start_create_tag();
+                }
+            }
+
+            // Delete branch/tag
+            (KeyModifiers::NONE, KeyCode::Char('d')) => {
+                self.delete_selected_branch_or_tag()?;
+            }
+
+            // Go back
+            (KeyModifiers::NONE, KeyCode::Esc) => {
+                self.state.go_back();
+            }
+
+            // Help
+            (KeyModifiers::NONE, KeyCode::Char('?')) => {
+                self.state.toggle_help();
+            }
+
+            // Refresh
+            (KeyModifiers::NONE, KeyCode::Char('r')) => {
+                self.state.refresh_branches(&self.repo)?;
+            }
+
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Handle branch/tag name input
+    fn handle_branch_name_input(&mut self, key: event::KeyEvent) -> Result<()> {
+        match key.code {
+            KeyCode::Esc => {
+                self.state.branch_browser.cancel_input();
+            }
+            KeyCode::Enter => {
+                if !self.state.branch_browser.input_buffer.is_empty() {
+                    self.create_branch_or_tag()?;
+                }
+            }
+            KeyCode::Backspace => {
+                self.state.branch_browser.backspace_input();
+            }
+            KeyCode::Char(c) => {
+                self.state.branch_browser.add_to_input(c);
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Checkout the selected branch
+    fn checkout_selected_branch(&mut self) -> Result<()> {
+        if self.state.branch_browser.tab != BranchViewTab::Branches {
+            return Ok(());
+        }
+
+        if let Some(branch) = self.state.branch_browser.selected_branch_info() {
+            if branch.is_local && !branch.is_head {
+                let branch_mgr = BranchManager::new(self.repo.inner());
+                match branch_mgr.checkout_branch(&branch.name) {
+                    Ok(()) => {
+                        info!("Checked out branch: {}", branch.name);
+                        self.state.refresh_branches(&self.repo)?;
+                        // Refresh commits for new branch
+                        self.state.commits = self.repo.get_commits(100)?;
+                        self.state.total_commits = self.state.commits.len();
+                        self.state.selected_commit = 0;
+                    }
+                    Err(e) => {
+                        warn!("Failed to checkout branch: {}", e);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Create a new branch or tag
+    fn create_branch_or_tag(&mut self) -> Result<()> {
+        let branch_mgr = BranchManager::new(self.repo.inner());
+        let name = self.state.branch_browser.input_buffer.clone();
+
+        match self.state.branch_browser.operation {
+            BranchOperation::CreateBranch => {
+                match branch_mgr.create_branch(&name, true) {
+                    Ok(()) => {
+                        info!("Created branch: {}", name);
+                    }
+                    Err(e) => {
+                        warn!("Failed to create branch: {}", e);
+                    }
+                }
+            }
+            BranchOperation::CreateTag => {
+                match branch_mgr.create_tag(&name, None) {
+                    Ok(()) => {
+                        info!("Created tag: {}", name);
+                    }
+                    Err(e) => {
+                        warn!("Failed to create tag: {}", e);
+                    }
+                }
+            }
+            BranchOperation::None => {}
+        }
+
+        self.state.branch_browser.cancel_input();
+        self.state.refresh_branches(&self.repo)?;
+
+        Ok(())
+    }
+
+    /// Delete the selected branch or tag
+    fn delete_selected_branch_or_tag(&mut self) -> Result<()> {
+        let branch_mgr = BranchManager::new(self.repo.inner());
+
+        match self.state.branch_browser.tab {
+            BranchViewTab::Branches => {
+                if let Some(branch) = self.state.branch_browser.selected_branch_info() {
+                    if branch.is_local && !branch.is_head {
+                        match branch_mgr.delete_branch(&branch.name, false) {
+                            Ok(()) => {
+                                info!("Deleted branch: {}", branch.name);
+                            }
+                            Err(e) => {
+                                warn!("Failed to delete branch: {}", e);
+                            }
+                        }
+                    }
+                }
+            }
+            BranchViewTab::Tags => {
+                if let Some(tag) = self.state.branch_browser.selected_tag_info() {
+                    match branch_mgr.delete_tag(&tag.name) {
+                        Ok(()) => {
+                            info!("Deleted tag: {}", tag.name);
+                        }
+                        Err(e) => {
+                            warn!("Failed to delete tag: {}", e);
+                        }
+                    }
+                }
+            }
+        }
+
+        self.state.refresh_branches(&self.repo)?;
 
         Ok(())
     }
