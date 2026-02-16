@@ -4,7 +4,7 @@ A high-performance terminal user interface (TUI) for exploring and analyzing Git
 
 ## Features
 
-### Phase 1 (Current) - Foundations
+### Phase 1 - Foundations
 - [x] TUI skeleton with multi-pane layout
 - [x] Git backend abstraction using libgit2
 - [x] Commit list with navigation
@@ -13,8 +13,14 @@ A high-performance terminal user interface (TUI) for exploring and analyzing Git
 - [x] Vim-style keyboard navigation
 - [x] Help overlay
 
+### Phase 2 (Current) - Diff & Staging
+- [x] Staging area view with staged/unstaged sections
+- [x] Stage/unstage individual files
+- [x] Stage/unstage all changes
+- [x] Commit creation with message input
+- [x] Working tree status display
+
 ### Planned Features
-- **Phase 2**: Staging area management, commit creation
 - **Phase 3**: Branch/tag browser, checkout operations
 - **Phase 4**: Repository analytics (commit heatmap, contributor stats)
 - **Phase 5**: Configuration system, themes, performance tuning
@@ -62,8 +68,18 @@ gitrep /path/to/repository
 | `Enter` | Toggle detail view |
 | `Tab` | Next pane |
 | `Shift+Tab` | Previous pane |
+| `s` | Open staging area |
 | `/` | Search |
 | `?` | Toggle help |
+
+### Staging Mode
+| Key | Action |
+|-----|--------|
+| `Space` / `Enter` | Stage/unstage file |
+| `a` | Stage all changes |
+| `u` | Unstage all changes |
+| `c` | Create commit |
+| `r` | Refresh status |
 
 ### General
 | Key | Action |
