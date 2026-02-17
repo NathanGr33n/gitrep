@@ -6,7 +6,7 @@
 mod event;
 mod theme;
 mod tui;
-mod widgets;
+pub(crate) mod widgets;
 
 pub use event::Event;
 pub use theme::Theme;

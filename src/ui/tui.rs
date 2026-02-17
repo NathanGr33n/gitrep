@@ -58,7 +58,7 @@ impl Tui {
         let theme = &self.theme;
 
         self.terminal.draw(|frame| {
-            let size = frame.area();
+            let size = frame.size();
 
             // Main layout
             let chunks = Layout::default()

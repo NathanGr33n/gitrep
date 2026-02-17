@@ -147,7 +147,6 @@ impl<'a> StagingArea<'a> {
     /// Unstage a file
     pub fn unstage_file(&self, path: &str) -> Result<()> {
         let head = self.repo.head()?.peel_to_commit()?;
-        let head_tree = head.tree()?;
 
         self.repo.reset_default(Some(&head.into_object()), [Path::new(path)])?;
         Ok(())

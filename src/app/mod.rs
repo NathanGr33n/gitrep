@@ -4,7 +4,7 @@
 //! between the UI and Git layer.
 
 mod config;
-mod state;
+pub(crate) mod state;
 
 pub use config::Config;
 pub use state::AppState;
